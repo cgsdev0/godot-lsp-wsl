@@ -1,13 +1,16 @@
 {
   "name": "godot-wsl-proxy",
   "version": "1.0.0",
-  "description": "",
+  "description": "Proxy the godot LSP from windows to WSL",
+  "respository": "https://github.com/cgsdev0/godot-lsp-wsl-proxy",
   "main": "index.ts",
+  "bin": "./dist/index.js",
   "scripts": {
-    "dev": "ts-node index.ts"
+    "dev": "ts-node index.ts",
+    "build": "tsc --module system --moduleResolution node --outFile ./dist/index.js index.ts"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "cgsdev0",
+  "license": "MIT",
   "devDependencies": {
     "ts-node": "^10.9.1",
     "typescript": "^4.9.3"
