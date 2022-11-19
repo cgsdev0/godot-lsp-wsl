@@ -1,5 +1,5 @@
 {
-  "name": "godot-wsl-proxy",
+  "name": "godot-lsp-wsl",
   "version": "1.0.0",
   "description": "Proxy the godot LSP from windows to WSL",
   "respository": "https://github.com/cgsdev0/godot-lsp-wsl-proxy",
