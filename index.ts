@@ -5,6 +5,10 @@ let awaiting_rest = false;
 let partial_data: Buffer[] = [];
 let expected_len = 0;
 
+let awaiting_rest_upstream = false;
+let partial_data_upstream: Buffer[] = [];
+let expected_len_upstream = 0;
+
 exec("cat /etc/resolv.conf | grep nameserver | cut -d' ' -f2", (error: any, stdout: any, stderr: any) => {
   if (error) {
     console.log(`error: ${error.message}`);
@@ -15,12 +19,72 @@ exec("cat /etc/resolv.conf | grep nameserver | cut -d' ' -f2", (error: any, stdo
     return;
   }
 
-  const wsl_host_ip = stdout;
+  const wsl_host_ip = stdout.replace(/^\s+|\s+$/g, '');
   console.log("Connecting to ", wsl_host_ip);
 
   var p = proxy.createProxy(6009, wsl_host_ip, 6008,
     {
+      upstream: function(context, data) {
+
+        if (awaiting_rest_upstream) {
+          partial_data_upstream.push(data);
+          let bytes = 0;
+          partial_data_upstream.forEach(buf => bytes += buf.byteLength);
+          if (bytes < expected_len_upstream) {
+            return Buffer.from('', "utf-8");
+          }
+          awaiting_rest_upstream = false;
+          data = Buffer.concat(partial_data_upstream);
+        }
+        const str = data.toString('utf-8');
+        const lines = str.split('\r\n');
+
+        const headers: string[] = [];
+        const body: string[] = [];
+        let done_with_headers = false;
+        lines.forEach(line => {
+          if (!line) {
+            done_with_headers = true;
+            return;
+          }
+          if (done_with_headers) body.push(line);
+          else headers.push(line);
+        });
+
+        const body_len = body.join("").length
+
+        if (!awaiting_rest_upstream) {
+          for (let i = 0; i < headers.length; ++i) {
+            const [name, value] = headers[i].split(": ");
+            if (name !== "Content-Length") continue;
+            expected_len_upstream = Number.parseInt(value);
+          }
+          if (expected_len_upstream > body_len) {
+            console.error("EXPECTED MORE", expected_len_upstream, body_len);
+            awaiting_rest_upstream = true;
+            partial_data_upstream = [data];
+            return Buffer.from('', "utf-8");
+          }
+        }
+        const new_body = body.join("").replace(/\\\/mnt\\\/c\\\//g, "C:\\/")
+        console.log(new_body)
+
+        for (let i = 0; i < headers.length; ++i) {
+          const [name] = headers[i].split(": ");
+          if (name !== "Content-Length") continue;
+          headers[i] = "Content-Length: " + new_body.length.toString()
+        }
+
+        headers.push('');
+        headers.push(new_body);
+
+        const new_data = headers.join('\r\n');
+
+
+        return Buffer.from(new_data, "utf-8");
+      },
       downstream: function(context, data) {
+        console.log(data.toString());
 
         if (awaiting_rest) {
           partial_data.push(data);
@@ -33,7 +97,6 @@ exec("cat /etc/resolv.conf | grep nameserver | cut -d' ' -f2", (error: any, stdo
           data = Buffer.concat(partial_data);
         }
         const str = data.toString('utf-8');
-        console.log(str);
         const lines = str.split('\r\n');
 
         const headers: string[] = [];
