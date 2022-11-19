@@ -22,7 +22,7 @@ exec("cat /etc/resolv.conf | grep nameserver | cut -d' ' -f2", (error: any, stdo
   const wsl_host_ip = stdout.replace(/^\s+|\s+$/g, '');
   console.log("Connecting to ", wsl_host_ip);
 
-  var p = proxy.createProxy(6009, wsl_host_ip, 6008,
+  var p = proxy.createProxy(6008, wsl_host_ip, 6008,
     {
       upstream: function(context, data) {
 
@@ -60,14 +60,12 @@ exec("cat /etc/resolv.conf | grep nameserver | cut -d' ' -f2", (error: any, stdo
             expected_len_upstream = Number.parseInt(value);
           }
           if (expected_len_upstream > body_len) {
-            console.error("EXPECTED MORE", expected_len_upstream, body_len);
             awaiting_rest_upstream = true;
             partial_data_upstream = [data];
             return Buffer.from('', "utf-8");
           }
         }
         const new_body = body.join("").replace(/\\\/mnt\\\/c\\\//g, "C:\\/")
-        console.log(new_body)
 
         for (let i = 0; i < headers.length; ++i) {
           const [name] = headers[i].split(": ");
@@ -84,7 +82,6 @@ exec("cat /etc/resolv.conf | grep nameserver | cut -d' ' -f2", (error: any, stdo
         return Buffer.from(new_data, "utf-8");
       },
       downstream: function(context, data) {
-        console.log(data.toString());
 
         if (awaiting_rest) {
           partial_data.push(data);
@@ -120,7 +117,6 @@ exec("cat /etc/resolv.conf | grep nameserver | cut -d' ' -f2", (error: any, stdo
             expected_len = Number.parseInt(value);
           }
           if (expected_len > body_len) {
-            console.error("EXPECTED MORE", expected_len, body_len);
             awaiting_rest = true;
             partial_data = [data];
             return Buffer.from('', "utf-8");
