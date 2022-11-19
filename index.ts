@@ -16,8 +16,9 @@ exec("cat /etc/resolv.conf | grep nameserver | cut -d' ' -f2", (error: any, stdo
   }
 
   const wsl_host_ip = stdout;
+  console.log("Connecting to ", wsl_host_ip);
 
-  proxy.createProxy(6008, wsl_host_ip, 6008,
+  var p = proxy.createProxy(6009, wsl_host_ip, 6008,
     {
       downstream: function(context, data) {
 

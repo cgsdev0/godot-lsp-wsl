@@ -7,7 +7,7 @@
   "bin": "./dist/index.js",
   "scripts": {
     "dev": "ts-node index.ts",
-    "build": "tsc --module system --moduleResolution node --outFile ./dist/index.js index.ts && sed -i '1i #!/usr/bin/env node' dist/index.js"
+    "build": "tsc && sed -i '1i #!/usr/bin/env node' dist/index.js && chmod +x dist/index.js"
   },
   "author": "cgsdev0",
   "license": "MIT",
